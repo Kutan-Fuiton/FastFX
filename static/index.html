@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Currency Converter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
+    <h1 class="text-2xl font-bold mb-6 text-center">💱 Currency Converter</h1>
+    
+    <div class="space-y-4">
+      <input id="amount" type="number" placeholder="Amount" class="w-full p-2 border rounded" oninput="debouncedConvert()" />
+      
+      <select id="fromCurrency" class="w-full p-2 border rounded" onchange="debouncedConvert()">
+        <option value="" disabled selected>From Currency</option>
+      </select>
+      
+      <select id="toCurrency" class="w-full p-2 border rounded" onchange="debouncedConvert()">
+        <option value="" disabled selected>To Currency</option>
+      </select>
+      
+      <button onclick="convert()" class="w-full bg-blue-500 hover:bg-blue-600 text-white p-2 rounded">Convert</button>
+    </div>
+
+    <div id="result" class="mt-6 text-center text-lg font-medium text-green-600"></div>
+  </div>
+
+  <script>
+    // Currency data
+    const currencies = {
+      "AUD": "Australian Dollar",
+      "BGN": "Bulgarian Lev",
+      "BRL": "Brazilian Real",
+      "CAD": "Canadian Dollar",
+      "CHF": "Swiss Franc",
+      "CNY": "Chinese Renminbi Yuan",
+      "CZK": "Czech Koruna",
+      "DKK": "Danish Krone",
+      "EUR": "Euro",
+      "GBP": "British Pound",
+      "HKD": "Hong Kong Dollar",
+      "HUF": "Hungarian Forint",
+      "IDR": "Indonesian Rupiah",
+      "ILS": "Israeli New Sheqel",
+      "INR": "Indian Rupee",
+      "ISK": "Icelandic Króna",
+      "JPY": "Japanese Yen",
+      "KRW": "South Korean Won",
+      "MXN": "Mexican Peso",
+      "MYR": "Malaysian Ringgit",
+      "NOK": "Norwegian Krone",
+      "NZD": "New Zealand Dollar",
+      "PHP": "Philippine Peso",
+      "PLN": "Polish Złoty",
+      "RON": "Romanian Leu",
+      "SEK": "Swedish Krona",
+      "SGD": "Singapore Dollar",
+      "THB": "Thai Baht",
+      "TRY": "Turkish Lira",
+      "USD": "United States Dollar",
+      "ZAR": "South African Rand"
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const fromDropdown = document.getElementById("fromCurrency");
+      const toDropdown = document.getElementById("toCurrency");
+
+      for (const [code, name] of Object.entries(currencies)) {
+        const optionText = `${code} - ${name}`;
+        
+        const fromOption = new Option(optionText, code);
+        const toOption = new Option(optionText, code);
+        
+        fromDropdown.add(fromOption);
+        toDropdown.add(toOption.cloneNode(true));
+      }
+
+      fromDropdown.value = "USD";
+      toDropdown.value = "INR";
+    });
+
+    let debounceTimer;
+    function debouncedConvert() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(convert, 500);
+    }
+
+    async function convert() {
+      const amount = document.getElementById("amount").value;
+      const from = document.getElementById("fromCurrency").value;
+      const to = document.getElementById("toCurrency").value;
+
+      if (!amount || !from || !to) {
+        document.getElementById("result").innerText = "Please fill all fields.";
+        return;
+      }
+
+      try {
+        const response = await fetch("/convert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            from_currency: from,
+            to_currency: to,
+            amount: parseFloat(amount)
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          document.getElementById("result").innerText = 
+            `${data.original_amount} ${data.from} = ${data.rate} ${data.to}`;
+        } else {
+          document.getElementById("result").innerText = data.detail || "Conversion failed.";
+        }
+      } catch (error) {
+        document.getElementById("result").innerText = "Network error. Try again.";
+      }
+    }
+  </script>
+</body>
+</html>
